@@ -14,7 +14,7 @@ spec:
       spec:
        containers:
         - name: mrdevops
-          image: shazabtanveer/project #image_name_dockerhub
+          image: hga_hv_pocss:latest #image_name_dockerhub
           imagePullPolicy: Always
           ports:
           - containerPort: 80
