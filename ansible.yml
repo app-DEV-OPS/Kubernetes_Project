@@ -2,7 +2,7 @@
   become: true
   tasks: 
      - name: docker login for ecr
-       command: sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com'
+       command: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com
      - name: create new deployment
        command: kubectl apply -f /home/ec2-user/Deployment.yml
      - name: create new service
