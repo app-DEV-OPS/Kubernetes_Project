@@ -1,0 +1,3 @@
+aws eks update-kubeconfig --name hga-eks-clust1 --region us-east-1
+
+

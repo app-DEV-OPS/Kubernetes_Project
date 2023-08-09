@@ -1,0 +1,78 @@
+#!/bin/bash
+
+function docker_login(){
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com
+}
+function docker_build(){
+docker build -t hga-poc MyAwesomeApp/.
+}
+function docker_tag(){
+docker tag hga-poc:latest 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga-poc:$BUILD_NUMBER
+}
+function docker_push(){
+docker push 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga-poc:$BUILD_NUMBER
+}
+docker_login
+docker_build
+docker_tag
+docker_push
+
+imagename="hga-poc"
+imagevalue="hga-poc"
+
+TASK_DEF_NAME="hga-ecs-tdf-020408"
+cluster_arn="hgs-ecs-cltr0408"
+SERVICE_NAME="hga-poc-svc"
+
+function doDeploy() {
+
+        aws ecs update-service \
+        --cluster $cluster_arn \
+        --service $SERVICE_NAME \
+        --task-definition $TASK_DEF_NAME:$TASK_REVISION \
+        --desired-count 1 \
+        --platform-version LATEST \
+        --force-new-deployment
+}
+function describe_task() {
+
+        TASK_DEF_JSON=$(
+                aws ecs describe-task-definition \
+                --task-definition $TASK_DEF_NAME:$TASK_REVISION \
+                --query '{ containerDefinitions: taskDefinition.containerDefinitions,
+                    family: taskDefinition.family,
+                  taskRoleArn: taskDefinition.taskRoleArn,
+                  executionRoleArn: taskDefinition.executionRoleArn,
+                  networkMode: taskDefinition.networkMode,
+                  volumes: taskDefinition.volumes,
+                  placementConstraints: taskDefinition.placementConstraints,
+                  requiresCompatibilities: taskDefinition.requiresCompatibilities,
+                  cpu: taskDefinition.cpu,
+                memory: taskDefinition.memory}'
+        )
+		
+        echo "============== updating $CONTAINER_TASK_DEF_URI to a Task Def ======================="
+        echo "xxxxxxxxxxx"
+        echo $TASK_DEF_JSON
+        echo "xxxxxxxxxxxxxx"
+
+        #TASK_DEF_JSON=$(echo $TASK_DEF_JSON | jq --arg ima $CONTAINER_TASK_DEF_URI '.containerDefinitions[0].image = $ima | del(.containerDefinitions[0].environment) | del(.containerDefinitions[0].mountPoints) |  del(.containerDefinitions[0].volumesFrom) | del(.placementConstraints)')
+        TASK_DEF_JSON=$(echo $TASK_DEF_JSON | jq --arg ima $CONTAINER_TASK_DEF_URI '.containerDefinitions[0].image = $ima | del(.containerDefinitions[0].mountPoints) |  del(.containerDefinitions[0].volumesFrom) | del(.placementConstraints)')
+        
+        echo $TASK_DEF_JSON
+        
+}
+function create_task() {
+        aws ecs register-task-definition --cli-input-json "$TASK_DEF_JSON"
+        taskrevisionFn
+}
+function taskrevisionFn() {
+        TASK_REVISION="$(aws ecs describe-task-definition --task-definition $TASK_DEF_NAME | egrep "revision" | tr �/� � | awk '{print $2}' | sed 's/"$//' | sed 's/, $//g' | sed 's/.$//')"
+
+}
+
+create_task
+taskrevisionFn
+describe_task
+echo "testing task def name " $TASK_DEF_NAME:$TASK_REVISION
+doDeploy

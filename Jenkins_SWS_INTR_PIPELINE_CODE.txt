@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+    stages {
+        stage('clone') {
+            steps {
+                git branch: 'main', credentialsId: 'Adhi2019', url: 'https://github.com/app-DEV-OPS/hga-pocs.git'
+            }
+        }
+        stage('Maven_Build') {
+            steps {
+              sh 'mvn -f MyAwesomeApp/pom.xml clean install'
+            }
+        }
+
+        stage('Docker_Build'){
+            
+		steps{
+         
+       sh 'docker build -t hga-pocs MyAwesomeApp/.'
+}
+}
+       stage('Docker_tag'){
+           steps{
+withCredentials([[
+$class: 'AmazonWebServicesCredentialsBinding',
+credentialsId: 'jenkins-aws-intr',
+accessKeyVariabel: 'AWS_ACCESS_KEY_ID',
+secreteKeyVariable: 'AWS_SECRET_ACCESS_KEY']]){
+              sh 'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com'
+              sh ' docker tag hga-poc:latest 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga-poc:latest'
+           }
+       }
+    }
+    stage('Docke_Push'){
+        steps{
+            sh 'docker push 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga-poc:latest'
+        }
+    }
+}}
+

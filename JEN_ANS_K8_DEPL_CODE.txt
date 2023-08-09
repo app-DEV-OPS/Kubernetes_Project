@@ -1,0 +1,68 @@
+
+pipeline{
+    agent any
+    stages(){
+        stage('Git_Clone'){
+            steps{
+                git credentialsId: 'Adhi2019', url: 'https://github.com/app-DEV-OPS/Kubernetes_Project.git'
+            }
+        }
+        stage('SSH_Copy_To_Ansible') {
+           steps {
+            sshagent(['hga_jen_ans_intr']) {
+               sh 'ssh -o StrictHostKeyChecking=no ec2-user@10.0.0.98'
+               sh 'scp /var/lib/jenkins/workspace/hga_hv_pocss/k8s_dep1/* ec2-user@10.0.0.98:/home/ec2-user'
+ 
+ }
+}
+}
+stage('Docker_Build'){
+steps{
+            sshagent(['hga_jen_ans_intr']) {
+             sh 'ssh -o StrictHostKeyChecking=no -A ec2-user@10.0.0.98 "cd /home/ec2-user && sudo docker image build -t hga_hv_pocss ."'
+
+    }
+}
+}
+stage('Docker_Image_Tagging'){
+steps {
+                sshagent(['hga_jen_ans_intr']) {
+				    sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.98 sudo aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com'
+			        sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.98 sudo docker tag hga_hv_pocss:latest 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga_hv_pocss:latest'        
+}
+}
+}
+    stage ('Docker_Image_Push'){
+	  	 steps {
+         sshagent(['hga_jen_ans_intr']) {
+            
+			 sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.98 sudo aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 463423328685.dkr.ecr.us-east-1.amazonaws.com'
+			 sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.98 sudo docker tag hga_hv_pocss:latest 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga_hv_pocss:latest' 
+			 sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.98 sudo docker push 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga_hv_pocss:latest'
+             
+}
+}
+}
+ stage ('Jenkins_k8_Copy'){
+	  	 steps {
+         sshagent(['jenkins_k8_intr']) {
+            
+			 sh 'ssh -o StrictHostKeyChecking=no  ec2-user@10.0.0.7 cd /home/ec2-user'
+			 sh 'scp /var/lib/jenkins/workspace/hga_hv_pocss/k8s_dep1/* ec2-user@10.0.0.7:/home/ec2-user'
+			 
+}
+}
+}
+stage('DeployOnK8Cluster'){
+steps{
+            sshagent(['hga_jen_ans_intr']) {
+               sh 'ssh -o StrictHostKeyChecking=no ec2-user@10.0.0.98 cd /home/ec2-user'
+               sh 'ssh -o StrictHostKeyChecking=no ec2-user@10.0.0.98 ansible -m ping web-servers'
+			   sh 'ssh -o StrictHostKeyChecking=no ec2-user@10.0.0.98 ansible-playbook ansible.yml'
+			  
+			  }
+			  }
+			  }
+			  
+			  }
+			  }
