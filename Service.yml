@@ -6,9 +6,9 @@ metadata:
     app: mrdevops
 spec:
   ports:
-    - port: 8086                               
+    - port: 8087                               
       targetPort: 80                    
-      nodePort: 31206
+      nodePort: 31207
   selector:
     app: mrdevops                    
   type: LoadBalancer                   
