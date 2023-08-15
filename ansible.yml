@@ -1,4 +1,5 @@
-- hosts: all
+- hosts:
+    - [web-apps]
   become: true
   tasks: 
      - name: create new deployment
