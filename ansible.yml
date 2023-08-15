@@ -1,7 +1,7 @@
 - hosts: all
-  become: true
+  become_user: ec2-user
   tasks: 
      - name: create new deployment
-       command: cat < /home/ec2-user/Deployment.yml | envsubst | kubectl apply -f -
+       command: kubectl apply -f /home/ec2-user/Deployment.yml
      - name: create new service
        command: kubectl apply -f /home/ec2-user/Service.yml -- sh -c
