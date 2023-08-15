@@ -1,5 +1,4 @@
-- hosts:
-    - 10.0.0.7
+- hosts: all
   become: true
   tasks: 
      - name: create new deployment
