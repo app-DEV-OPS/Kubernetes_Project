@@ -14,7 +14,7 @@ spec:
       spec:
        containers:
         - name: mrdevops
-          image: 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga_hv_pocss:${IMAGE_TAG}
+          image: 463423328685.dkr.ecr.us-east-1.amazonaws.com/hga_hv_pocss:$IMAGE_TAG
           imagePullPolicy: Always
           ports:
           - containerPort: 80
